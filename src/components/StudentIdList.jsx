@@ -1,8 +1,10 @@
+import { useEffect, useRef, useState } from "react";
 import { MAX_STUDENTS } from "../utils/idGenerator";
 
 export default function StudentIdList({
   batch,
   studentIds,
+  onAddMultipleIds,
   onAddId,
   onChangeId,
   onRemoveId,
@@ -10,6 +12,87 @@ export default function StudentIdList({
   activeIndex,
 }) {
   const validCount = studentIds.length - validationMap.filter(Boolean).length;
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [bulkInput, setBulkInput] = useState("");
+  const [bulkMessage, setBulkMessage] = useState("");
+  const [bulkStatus, setBulkStatus] = useState("idle");
+  const textareaRef = useRef(null);
+  const closeTimerRef = useRef(null);
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const closeBulkPanel = () => {
+    clearCloseTimer();
+    setIsBulkOpen(false);
+    setBulkInput("");
+    setBulkMessage("");
+    setBulkStatus("idle");
+  };
+
+  useEffect(() => () => clearCloseTimer(), []);
+
+  useEffect(() => {
+    if (isBulkOpen) {
+      textareaRef.current?.focus();
+    }
+  }, [isBulkOpen]);
+
+  const handleBulkToggle = () => {
+    if (isBulkOpen) {
+      closeBulkPanel();
+      return;
+    }
+
+    clearCloseTimer();
+    setIsBulkOpen(true);
+    setBulkMessage("");
+    setBulkStatus("idle");
+  };
+
+  const handleBulkCancel = () => {
+    closeBulkPanel();
+  };
+
+  const handleBulkAdd = () => {
+    const tokens = bulkInput.split(/[\s,]+/).map((token) => token.trim()).filter(Boolean);
+    const seen = new Set(studentIds.map((studentId) => studentId.trim()));
+    const validIds = [];
+    let duplicateCount = 0;
+
+    tokens.forEach((token) => {
+      if (!/^\d{8}$/.test(token)) {
+        return;
+      }
+
+      if (seen.has(token)) {
+        duplicateCount += 1;
+        return;
+      }
+
+      seen.add(token);
+      validIds.push(token);
+    });
+
+    if (validIds.length === 0) {
+      clearCloseTimer();
+      setBulkStatus("error");
+      setBulkMessage("No valid IDs found. Check the format and try again.");
+      return;
+    }
+
+    onAddMultipleIds(validIds);
+    setBulkStatus("success");
+    setBulkMessage(`${validIds.length} IDs added. ${duplicateCount} duplicates skipped.`);
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => {
+      closeBulkPanel();
+    }, 1500);
+  };
 
   return (
     <section className="card animate-fade-up p-6 lg:p-7">
@@ -99,19 +182,77 @@ export default function StudentIdList({
       </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line/70 pt-5">
-        <button
-          type="button"
-          className="button-secondary"
-          onClick={onAddId}
-          disabled={studentIds.length >= MAX_STUDENTS}
-        >
-          + Add ID
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            className="button-secondary"
+            onClick={onAddId}
+            disabled={studentIds.length >= MAX_STUDENTS}
+          >
+            + Add ID
+          </button>
+
+          <button
+            type="button"
+            className="button-secondary"
+            onClick={handleBulkToggle}
+          >
+            + Add Multiple IDs
+          </button>
+        </div>
 
         <p className="text-xs leading-5 text-muted">
           Keep the list clean before randomizing. IDs can be edited directly in
           place.
         </p>
+      </div>
+
+      <div
+        className={`overflow-hidden transition-[max-height,opacity,transform,margin-top] duration-300 ease-out ${
+          isBulkOpen
+            ? "mt-4 max-h-[20rem] opacity-100 translate-y-0"
+            : "max-h-0 opacity-0 -translate-y-2 pointer-events-none"
+        }`}
+      >
+        <div className="rounded-2xl border border-line/70 bg-white/90 p-4 shadow-sm">
+          <textarea
+            ref={textareaRef}
+            className="input mt-0 min-h-[7rem] resize-y font-mono text-sm tracking-[0.08em]"
+            placeholder={`Paste or type multiple IDs — separate by comma, space, or new line.
+Example: 12022001, 12022002 12022003
+         12022004`}
+            value={bulkInput}
+            onChange={(event) => setBulkInput(event.target.value)}
+          />
+
+          {bulkMessage ? (
+            <p
+              className={`mt-3 text-sm font-medium ${
+                bulkStatus === "success" ? "text-[#16A34A]" : "text-[#D97706]"
+              }`}
+            >
+              {bulkMessage}
+            </p>
+          ) : null}
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="button-primary"
+              onClick={handleBulkAdd}
+            >
+              Add IDs
+            </button>
+
+            <button
+              type="button"
+              className="text-sm font-medium text-muted transition hover:text-ink focus:outline-none focus:ring-4 focus:ring-accent/10"
+              onClick={handleBulkCancel}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );

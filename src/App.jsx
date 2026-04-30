@@ -191,6 +191,16 @@ export default function App() {
     setStudentIds((current) => [...current, nextStudentId]);
   };
 
+  const handleAddMultipleIds = (newIds) => {
+    if (!newIds.length) {
+      return;
+    }
+
+    setSeatPlan(null);
+    setActiveIndex(null);
+    setStudentIds((current) => [...current, ...newIds]);
+  };
+
   const handleRandomize = () => {
     if (!isReady) {
       return;
@@ -264,6 +274,7 @@ export default function App() {
             <StudentIdList
               batch={config.batch}
               studentIds={studentIds}
+              onAddMultipleIds={handleAddMultipleIds}
               onAddId={handleStudentIdAdd}
               onChangeId={handleStudentIdChange}
               onRemoveId={handleStudentIdRemove}
