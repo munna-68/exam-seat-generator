@@ -90,7 +90,9 @@ function MetricCard({ label, value, detail, compact = false }) {
     >
       <p
         className={`font-semibold uppercase text-muted ${
-          compact ? "text-[9px] tracking-[0.24em]" : "text-[10px] tracking-[0.3em]"
+          compact
+            ? "text-[9px] tracking-[0.24em]"
+            : "text-[10px] tracking-[0.3em]"
         }`}
       >
         {label}
@@ -207,7 +209,9 @@ export default function App() {
   };
 
   const handleSeatSwap = (sourceKey, targetKey) => {
-    setSeatPlan((current) => swapSeatAssignments(current, sourceKey, targetKey));
+    setSeatPlan((current) =>
+      swapSeatAssignments(current, sourceKey, targetKey),
+    );
   };
 
   const previewMessage = seatPlan
@@ -340,7 +344,10 @@ export default function App() {
 
             <div key={previewKey} className="mt-6 space-y-6 animate-fade-up">
               <SeatingGrid seatPlan={seatPlan} onSeatSwap={handleSeatSwap} />
-              <OverflowTable extraRows={seatPlan?.extraRows ?? []} onSeatSwap={handleSeatSwap} />
+              <OverflowTable
+                extraRows={seatPlan?.extraRows ?? []}
+                onSeatSwap={handleSeatSwap}
+              />
             </div>
           </section>
         </div>

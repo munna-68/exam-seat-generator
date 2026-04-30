@@ -39,19 +39,21 @@ function drawCenteredHeader(doc, config, pageWidth, margin) {
     config.examTitle || "Exam Seat Plan",
     pageWidth - margin * 2,
   );
-  const titleY = 16;
-  const titleLineHeight = 7.2;
+  const titleY = margin + 11;
+  const titleLineHeight = 22;
   const titleBottom = titleY + titleLines.length * titleLineHeight;
-  const dateY = titleBottom + 6;
-  const roomY = dateY + 6;
+  const dateY = titleBottom + 12;
+  const roomY = dateY + 14;
+  const ruleY = roomY + 11;
 
-  doc.setTextColor(19, 25, 39);
-  doc.setFont("times", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(19);
   doc.text(titleLines, pageWidth / 2, titleY, { align: "center" });
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
+  doc.setFontSize(10);
+  doc.setTextColor(107, 114, 128);
   doc.text(`Date: ${formatDate(config.date)}`, pageWidth / 2, dateY, {
     align: "center",
   });
@@ -59,57 +61,82 @@ function drawCenteredHeader(doc, config, pageWidth, margin) {
     align: "center",
   });
 
-  doc.setDrawColor(214, 219, 226);
-  doc.setLineWidth(0.2);
-  doc.line(margin, roomY + 4, pageWidth - margin, roomY + 4);
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.6);
+  doc.line(margin, ruleY, pageWidth - margin, ruleY);
 
-  return roomY + 10;
+  return ruleY + 18;
 }
 
-function drawSeatBlock(doc, { x, y, width, label, rows }) {
-  const headerHeight = 9;
-  const rowHeight = 8.8;
-  const halfWidth = width / 2;
-  const height = headerHeight + rows.length * rowHeight;
+function drawPairTable(
+  doc,
+  { x, y, width, headers, rows, showHeaderLabels = true },
+) {
+  const headerHeight = 26;
+  const rowHeight = 26;
+  const normalizedHeaders = [headers?.[0] ?? "", headers?.[1] ?? ""];
+  const columnWidth = width / 2;
+  const blockHeight = headerHeight + rows.length * rowHeight;
+  const borderColor = [226, 232, 240];
+  const headerFill = [30, 41, 59];
+  const oddFill = [255, 255, 255];
+  const evenFill = [248, 250, 252];
+  const bodyColor = [17, 24, 39];
+  const emptyColor = [156, 163, 175];
 
-  doc.setDrawColor(200, 205, 212);
-  doc.setLineWidth(0.22);
-  doc.setFillColor(248, 249, 251);
-  doc.rect(x, y, width, height, "S");
-  doc.setFillColor(244, 246, 249);
-  doc.rect(x, y, width, headerHeight, "F");
-  doc.line(x, y + headerHeight, x + width, y + headerHeight);
-  doc.line(x + halfWidth, y, x + halfWidth, y + height);
+  doc.setDrawColor(...borderColor);
+  doc.setLineWidth(0.3);
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.4);
-  doc.setTextColor(24, 31, 45);
-  doc.text(label, x + width / 2, y + 5.9, { align: "center" });
+  normalizedHeaders.forEach((header, headerIndex) => {
+    const cellX = x + headerIndex * columnWidth;
 
-  rows.forEach((row, rowIndex) => {
-    const rowTop = y + headerHeight + rowIndex * rowHeight;
+    doc.setFillColor(...headerFill);
+    doc.rect(cellX, y, columnWidth, headerHeight, "FD");
 
-    if (rowIndex > 0) {
-      doc.line(x, rowTop, x + width, rowTop);
+    if (showHeaderLabels) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      if (header) {
+        doc.text(String(header), cellX + columnWidth / 2, y + 17, {
+          align: "center",
+        });
+      }
     }
+  });
+
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const row = rows[rowIndex];
+    const rowY = y + headerHeight + rowIndex * rowHeight;
+    const fillColor = rowIndex % 2 === 0 ? oddFill : evenFill;
 
     row.forEach((seat, seatIndex) => {
-      const seatX = x + seatIndex * halfWidth;
+      const cellX = x + seatIndex * columnWidth;
 
-      if (seatIndex === 1) {
-        doc.line(seatX, rowTop, seatX, rowTop + rowHeight);
-      }
+      doc.setFillColor(...fillColor);
+      doc.rect(cellX, rowY, columnWidth, rowHeight, "FD");
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.4);
-      doc.setTextColor(seat?.isPlaceholder ? 150 : 24, seat?.isPlaceholder ? 156 : 31, seat?.isPlaceholder ? 167 : 45);
-      doc.text(seat?.value || "—", seatX + halfWidth / 2, rowTop + rowHeight / 2 + 2.6, {
+      doc.setFontSize(10);
+      doc.setTextColor(
+        seat?.value ? bodyColor[0] : emptyColor[0],
+        seat?.value ? bodyColor[1] : emptyColor[1],
+        seat?.value ? bodyColor[2] : emptyColor[2],
+      );
+      doc.text(seat?.value || "—", cellX + columnWidth / 2, rowY + 16.5, {
         align: "center",
       });
     });
-  });
+  }
 
-  return height;
+  return blockHeight;
+}
+
+function drawSectionLabel(doc, text, x, y, width) {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(17, 24, 39);
+  doc.text(text, x + width / 2, y, { align: "center" });
 }
 
 export default function PdfExport({ config, seatPlan, isDisabled }) {
@@ -128,24 +155,26 @@ export default function PdfExport({ config, seatPlan, isDisabled }) {
       const { default: jsPDF } = await import("jspdf");
       const doc = new jsPDF({
         orientation: "landscape",
-        unit: "mm",
+        unit: "pt",
         format: "a4",
       });
 
-      const margin = 12;
+      const margin = 20;
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       let currentY = drawCenteredHeader(doc, config, pageWidth, margin);
 
       const blocksPerRow = 3;
-      const blockGap = 5;
-      const rowGap = 7;
+      const blockGap = 10;
+      const rowGap = 10;
       const blockRows = chunkRows(seatPlan.blocks, blocksPerRow);
 
       for (const blockRow of blockRows) {
         const rowBlockCount = blockRow.length;
-        const blockWidth = (pageWidth - margin * 2 - blockGap * (rowBlockCount - 1)) / rowBlockCount;
-        const blockHeight = 9 + seatPlan.rows * 8.8;
+        const blockWidth =
+          (pageWidth - margin * 2 - blockGap * (rowBlockCount - 1)) /
+          rowBlockCount;
+        const blockHeight = 26 + seatPlan.rows * 26;
 
         if (currentY + blockHeight > pageHeight - margin) {
           doc.addPage();
@@ -154,12 +183,13 @@ export default function PdfExport({ config, seatPlan, isDisabled }) {
 
         blockRow.forEach((block, blockIndex) => {
           const x = margin + blockIndex * (blockWidth + blockGap);
-          drawSeatBlock(doc, {
+          drawPairTable(doc, {
             x,
             y: currentY,
             width: blockWidth,
-            label: block.label,
+            headers: block.columns,
             rows: block.rows,
+            showHeaderLabels: true,
           });
         });
 
@@ -167,19 +197,32 @@ export default function PdfExport({ config, seatPlan, isDisabled }) {
       }
 
       if (seatPlan.extraRows.length > 0) {
-        const extraHeight = 9 + seatPlan.extraRows.length * 8.8;
+        const extraLabelGap = 14;
+        const extraLabelHeight = 14;
+        const extraTableHeight = 26 + seatPlan.extraRows.length * 26;
+        const extraTotalHeight =
+          extraLabelHeight + extraLabelGap + extraTableHeight;
 
-        if (currentY + extraHeight > pageHeight - margin) {
+        if (currentY + extraTotalHeight > pageHeight - margin) {
           doc.addPage();
           currentY = drawCenteredHeader(doc, config, pageWidth, margin);
         }
 
-        drawSeatBlock(doc, {
+        drawSectionLabel(
+          doc,
+          "Extra Seats",
+          margin,
+          currentY + 11,
+          pageWidth - margin * 2,
+        );
+
+        drawPairTable(doc, {
           x: margin,
-          y: currentY,
+          y: currentY + extraLabelHeight + extraLabelGap,
           width: pageWidth - margin * 2,
-          label: "Extra Seats",
+          headers: ["1", "2"],
           rows: seatPlan.extraRows,
+          showHeaderLabels: true,
         });
       }
 

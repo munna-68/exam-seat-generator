@@ -37,7 +37,9 @@ function SeatCell({ seat, onSeatSwap }) {
           <span className="truncate">{seat.value}</span>
         </div>
       ) : (
-        <span className="font-mono text-sm tracking-[0.16em] text-muted">—</span>
+        <span className="font-mono text-sm tracking-[0.16em] text-muted">
+          —
+        </span>
       )}
     </div>
   );
@@ -61,7 +63,8 @@ export default function SeatingGrid({ seatPlan, onSeatSwap }) {
         </div>
 
         <div className="rounded-full border border-line/70 bg-paper/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-          {seatPlan.blocks.length} block{seatPlan.blocks.length === 1 ? "" : "s"}
+          {seatPlan.blocks.length} block
+          {seatPlan.blocks.length === 1 ? "" : "s"}
         </div>
       </div>
 

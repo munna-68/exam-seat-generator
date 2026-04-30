@@ -59,45 +59,51 @@ export function assignSeats(studentIds, { columns, rows }) {
   const mainIds = studentIds.slice(0, totalCapacity);
   const overflowIds = studentIds.slice(totalCapacity);
 
-  const blocks = Array.from({ length: Math.ceil(safeColumns / 2) }, (_, blockIndex) => {
-    const leftColumnIndex = blockIndex * 2;
-    const rightColumnIndex = leftColumnIndex + 1;
-    const leftColumn = getColumnLabel(leftColumnIndex);
-    const rightColumn = rightColumnIndex < safeColumns ? getColumnLabel(rightColumnIndex) : null;
+  const blocks = Array.from(
+    { length: Math.ceil(safeColumns / 2) },
+    (_, blockIndex) => {
+      const leftColumnIndex = blockIndex * 2;
+      const rightColumnIndex = leftColumnIndex + 1;
+      const leftColumn = getColumnLabel(leftColumnIndex);
+      const rightColumn =
+        rightColumnIndex < safeColumns
+          ? getColumnLabel(rightColumnIndex)
+          : null;
 
-    return {
-      key: `block-${blockIndex}`,
-      label: createBlockLabel(leftColumn, rightColumn),
-      columns: [leftColumn, rightColumn].filter(Boolean),
-      rows: Array.from({ length: safeRows }, (_, rowIndex) => {
-        const leftSeatIndex = leftColumnIndex * safeRows + rowIndex;
-        const rightSeatIndex = rightColumnIndex * safeRows + rowIndex;
+      return {
+        key: `block-${blockIndex}`,
+        label: createBlockLabel(leftColumn, rightColumn),
+        columns: [leftColumn, rightColumn].filter(Boolean),
+        rows: Array.from({ length: safeRows }, (_, rowIndex) => {
+          const leftSeatIndex = leftColumnIndex * safeRows + rowIndex;
+          const rightSeatIndex = rightColumnIndex * safeRows + rowIndex;
 
-        return [
-          createSeat({
-            key: `${leftColumn}${rowIndex + 1}`,
-            column: leftColumn,
-            row: rowIndex + 1,
-            value: mainIds[leftSeatIndex] ?? "",
-          }),
-          rightColumn
-            ? createSeat({
-                key: `${rightColumn}${rowIndex + 1}`,
-                column: rightColumn,
-                row: rowIndex + 1,
-                value: mainIds[rightSeatIndex] ?? "",
-              })
-            : createSeat({
-                key: `${leftColumn}${rowIndex + 1}-empty`,
-                column: null,
-                row: rowIndex + 1,
-                value: "",
-                isPlaceholder: true,
-              }),
-        ];
-      }),
-    };
-  });
+          return [
+            createSeat({
+              key: `${leftColumn}${rowIndex + 1}`,
+              column: leftColumn,
+              row: rowIndex + 1,
+              value: mainIds[leftSeatIndex] ?? "",
+            }),
+            rightColumn
+              ? createSeat({
+                  key: `${rightColumn}${rowIndex + 1}`,
+                  column: rightColumn,
+                  row: rowIndex + 1,
+                  value: mainIds[rightSeatIndex] ?? "",
+                })
+              : createSeat({
+                  key: `${leftColumn}${rowIndex + 1}-empty`,
+                  column: null,
+                  row: rowIndex + 1,
+                  value: "",
+                  isPlaceholder: true,
+                }),
+          ];
+        }),
+      };
+    },
+  );
 
   const extraRows = [];
 

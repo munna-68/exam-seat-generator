@@ -37,7 +37,9 @@ function SeatCell({ seat, onSeatSwap }) {
           <span className="truncate">{seat.value}</span>
         </div>
       ) : (
-        <span className="font-mono text-sm tracking-[0.16em] text-muted">—</span>
+        <span className="font-mono text-sm tracking-[0.16em] text-muted">
+          —
+        </span>
       )}
     </div>
   );
