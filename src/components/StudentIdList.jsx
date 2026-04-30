@@ -31,7 +31,8 @@ export default function StudentIdList({
         </div>
       </div>
 
-      <div className="mt-5 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
+      <div className="mt-5 max-h-[32rem] overflow-y-auto pr-1">
+        <div className="grid gap-3 sm:grid-cols-2">
         {studentIds.map((studentId, index) => {
           const validationMessage = validationMap[index];
 
@@ -92,6 +93,7 @@ export default function StudentIdList({
             </div>
           );
         })}
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line/70 pt-5">

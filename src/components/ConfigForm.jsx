@@ -24,10 +24,6 @@ export default function ConfigForm({ config, onFieldChange }) {
             student IDs and the final seat plan.
           </p>
         </div>
-
-        <div className="rounded-full border border-line/70 bg-accentSoft px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
-          12[B]220NN
-        </div>
       </div>
 
       <div className="mt-6 grid gap-5 md:grid-cols-2">

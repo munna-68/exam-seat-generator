@@ -24,6 +24,94 @@ function slugify(value) {
   );
 }
 
+function chunkRows(rows, size) {
+  const chunks = [];
+
+  for (let index = 0; index < rows.length; index += size) {
+    chunks.push(rows.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function drawCenteredHeader(doc, config, pageWidth, margin) {
+  const titleLines = doc.splitTextToSize(
+    config.examTitle || "Exam Seat Plan",
+    pageWidth - margin * 2,
+  );
+  const titleY = 16;
+  const titleLineHeight = 7.2;
+  const titleBottom = titleY + titleLines.length * titleLineHeight;
+  const dateY = titleBottom + 6;
+  const roomY = dateY + 6;
+
+  doc.setTextColor(19, 25, 39);
+  doc.setFont("times", "bold");
+  doc.setFontSize(19);
+  doc.text(titleLines, pageWidth / 2, titleY, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.text(`Date: ${formatDate(config.date)}`, pageWidth / 2, dateY, {
+    align: "center",
+  });
+  doc.text(`Room: ${config.roomNumber || "—"}`, pageWidth / 2, roomY, {
+    align: "center",
+  });
+
+  doc.setDrawColor(214, 219, 226);
+  doc.setLineWidth(0.2);
+  doc.line(margin, roomY + 4, pageWidth - margin, roomY + 4);
+
+  return roomY + 10;
+}
+
+function drawSeatBlock(doc, { x, y, width, label, rows }) {
+  const headerHeight = 9;
+  const rowHeight = 8.8;
+  const halfWidth = width / 2;
+  const height = headerHeight + rows.length * rowHeight;
+
+  doc.setDrawColor(200, 205, 212);
+  doc.setLineWidth(0.22);
+  doc.setFillColor(248, 249, 251);
+  doc.rect(x, y, width, height, "S");
+  doc.setFillColor(244, 246, 249);
+  doc.rect(x, y, width, headerHeight, "F");
+  doc.line(x, y + headerHeight, x + width, y + headerHeight);
+  doc.line(x + halfWidth, y, x + halfWidth, y + height);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.4);
+  doc.setTextColor(24, 31, 45);
+  doc.text(label, x + width / 2, y + 5.9, { align: "center" });
+
+  rows.forEach((row, rowIndex) => {
+    const rowTop = y + headerHeight + rowIndex * rowHeight;
+
+    if (rowIndex > 0) {
+      doc.line(x, rowTop, x + width, rowTop);
+    }
+
+    row.forEach((seat, seatIndex) => {
+      const seatX = x + seatIndex * halfWidth;
+
+      if (seatIndex === 1) {
+        doc.line(seatX, rowTop, seatX, rowTop + rowHeight);
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.4);
+      doc.setTextColor(seat?.isPlaceholder ? 150 : 24, seat?.isPlaceholder ? 156 : 31, seat?.isPlaceholder ? 167 : 45);
+      doc.text(seat?.value || "—", seatX + halfWidth / 2, rowTop + rowHeight / 2 + 2.6, {
+        align: "center",
+      });
+    });
+  });
+
+  return height;
+}
+
 export default function PdfExport({ config, seatPlan, isDisabled }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -37,142 +125,61 @@ export default function PdfExport({ config, seatPlan, isDisabled }) {
     setErrorMessage("");
 
     try {
-      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
-        import("jspdf"),
-        import("jspdf-autotable"),
-      ]);
-
+      const { default: jsPDF } = await import("jspdf");
       const doc = new jsPDF({
         orientation: "landscape",
         unit: "mm",
         format: "a4",
       });
+
       const margin = 12;
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      const titleLines = doc.splitTextToSize(
-        config.examTitle || "Exam Seat Plan",
-        pageWidth - margin * 2,
-      );
-      const titleY = 18;
-      const titleLineHeight = 8;
-      const subtitleY = titleY + titleLines.length * titleLineHeight + 2;
-      const detailY = subtitleY + 6;
+      let currentY = drawCenteredHeader(doc, config, pageWidth, margin);
 
-      doc.setTextColor(18, 24, 38);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(20);
-      doc.text(titleLines, margin, titleY);
+      const blocksPerRow = 3;
+      const blockGap = 5;
+      const rowGap = 7;
+      const blockRows = chunkRows(seatPlan.blocks, blocksPerRow);
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.text(
-        `${formatDate(config.date)} | Room: ${config.roomNumber || "—"}`,
-        margin,
-        subtitleY,
-      );
+      for (const blockRow of blockRows) {
+        const rowBlockCount = blockRow.length;
+        const blockWidth = (pageWidth - margin * 2 - blockGap * (rowBlockCount - 1)) / rowBlockCount;
+        const blockHeight = 9 + seatPlan.rows * 8.8;
 
-      doc.setFontSize(9);
-      doc.setTextColor(91, 103, 118);
-      doc.text(
-        `Batch: ${config.batch} | Students: ${seatPlan.studentCount} | Capacity: ${seatPlan.totalCapacity}`,
-        margin,
-        detailY,
-      );
-
-      const header = [
-        "Row",
-        ...Array.from({ length: seatPlan.columns }, (_, index) =>
-          String.fromCharCode(65 + index),
-        ),
-      ];
-      const availableWidth = pageWidth - margin * 2 - 16;
-      const columnWidth = availableWidth / seatPlan.columns;
-
-      const body = seatPlan.mainGrid.map((row, rowIndex) => [
-        String(rowIndex + 1),
-        ...row.map(
-          (bench) =>
-            `${bench.label}\nLeft: ${bench.left || "—"}\nRight: ${bench.right || "—"}`,
-        ),
-      ]);
-
-      const columnStyles = {
-        0: { cellWidth: 14, halign: "center", fontStyle: "bold" },
-      };
-
-      for (let index = 0; index < seatPlan.columns; index += 1) {
-        columnStyles[index + 1] = { cellWidth: columnWidth };
-      }
-
-      autoTable(doc, {
-        startY: detailY + 6,
-        head: [header],
-        body,
-        theme: "grid",
-        margin: { left: margin, right: margin },
-        styles: {
-          font: "helvetica",
-          fontSize: seatPlan.columns > 8 ? 5.5 : 6.5,
-          cellPadding: 1.8,
-          valign: "middle",
-          overflow: "linebreak",
-          textColor: [18, 24, 38],
-          lineColor: [214, 219, 226],
-          lineWidth: 0.2,
-        },
-        headStyles: {
-          fillColor: [18, 24, 38],
-          textColor: 255,
-          fontStyle: "bold",
-          halign: "center",
-        },
-        columnStyles,
-      });
-
-      let nextY = doc.lastAutoTable.finalY + 8;
-
-      if (seatPlan.overflow.length > 0) {
-        if (nextY > pageHeight - 40) {
+        if (currentY + blockHeight > pageHeight - margin) {
           doc.addPage();
-          nextY = 16;
+          currentY = drawCenteredHeader(doc, config, pageWidth, margin);
         }
 
-        doc.setTextColor(18, 24, 38);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(14);
-        doc.text("Front Table", margin, nextY);
-        nextY += 4;
+        blockRow.forEach((block, blockIndex) => {
+          const x = margin + blockIndex * (blockWidth + blockGap);
+          drawSeatBlock(doc, {
+            x,
+            y: currentY,
+            width: blockWidth,
+            label: block.label,
+            rows: block.rows,
+          });
+        });
 
-        autoTable(doc, {
-          startY: nextY,
-          head: [["Bench", "Left", "Right"]],
-          body: seatPlan.overflow.map((bench) => [
-            bench.label,
-            bench.left || "—",
-            bench.right || "—",
-          ]),
-          theme: "grid",
-          margin: { left: margin, right: margin },
-          styles: {
-            font: "helvetica",
-            fontSize: 7,
-            cellPadding: 1.8,
-            valign: "middle",
-            textColor: [18, 24, 38],
-            lineColor: [214, 219, 226],
-            lineWidth: 0.2,
-          },
-          headStyles: {
-            fillColor: [15, 118, 110],
-            textColor: 255,
-            fontStyle: "bold",
-          },
-          columnStyles: {
-            0: { cellWidth: 28, fontStyle: "bold" },
-            1: { cellWidth: (pageWidth - margin * 2 - 28) / 2 },
-            2: { cellWidth: (pageWidth - margin * 2 - 28) / 2 },
-          },
+        currentY += blockHeight + rowGap;
+      }
+
+      if (seatPlan.extraRows.length > 0) {
+        const extraHeight = 9 + seatPlan.extraRows.length * 8.8;
+
+        if (currentY + extraHeight > pageHeight - margin) {
+          doc.addPage();
+          currentY = drawCenteredHeader(doc, config, pageWidth, margin);
+        }
+
+        drawSeatBlock(doc, {
+          x: margin,
+          y: currentY,
+          width: pageWidth - margin * 2,
+          label: "Extra Seats",
+          rows: seatPlan.extraRows,
         });
       }
 

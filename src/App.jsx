@@ -4,7 +4,7 @@ import StudentIdList from "./components/StudentIdList";
 import SeatingGrid from "./components/SeatingGrid";
 import OverflowTable from "./components/OverflowTable";
 import PdfExport from "./components/PdfExport";
-import { assignSeats } from "./utils/seatAssigner";
+import { assignSeats, swapSeatAssignments } from "./utils/seatAssigner";
 import {
   generateStudentIds,
   getBatchDigit,
@@ -81,16 +81,34 @@ function formatSummaryDate(value) {
   }).format(date);
 }
 
-function MetricCard({ label, value, detail }) {
+function MetricCard({ label, value, detail, compact = false }) {
   return (
-    <div className="rounded-3xl border border-line/70 bg-white/85 px-4 py-4 shadow-sm">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">
+    <div
+      className={`rounded-3xl border border-line/70 bg-white/85 shadow-sm ${
+        compact ? "px-3 py-3" : "px-4 py-4"
+      }`}
+    >
+      <p
+        className={`font-semibold uppercase text-muted ${
+          compact ? "text-[9px] tracking-[0.24em]" : "text-[10px] tracking-[0.3em]"
+        }`}
+      >
         {label}
       </p>
-      <div className="mt-3 text-2xl font-semibold tracking-tight text-ink">
+      <div
+        className={`tracking-tight text-ink ${
+          compact ? "mt-2 text-lg font-semibold" : "mt-3 text-2xl font-semibold"
+        }`}
+      >
         {value}
       </div>
-      <p className="mt-2 text-xs leading-5 text-muted">{detail}</p>
+      <p
+        className={`text-muted ${
+          compact ? "mt-1 text-[11px] leading-4" : "mt-2 text-xs leading-5"
+        }`}
+      >
+        {detail}
+      </p>
     </div>
   );
 }
@@ -120,9 +138,8 @@ export default function App() {
   );
   const invalidCount = validationMap.filter(Boolean).length;
   const isReady = invalidCount === 0 && studentIds.length > 0;
-  const capacity = config.columns * config.rows * 2;
+  const capacity = config.columns * config.rows;
   const overflowSeats = Math.max(0, studentIds.length - capacity);
-  const batchDigit = getBatchDigit(config.batch);
 
   const handleFieldChange = (field, value) => {
     setConfig((current) => ({
@@ -189,8 +206,12 @@ export default function App() {
     setPreviewKey((current) => current + 1);
   };
 
+  const handleSeatSwap = (sourceKey, targetKey) => {
+    setSeatPlan((current) => swapSeatAssignments(current, sourceKey, targetKey));
+  };
+
   const previewMessage = seatPlan
-    ? `${seatPlan.studentCount} students placed across ${seatPlan.columns} columns and ${seatPlan.rows} rows.`
+    ? `${seatPlan.studentCount} students placed across ${seatPlan.blocks.length} table blocks.`
     : "Randomize the list to generate a new seating arrangement.";
 
   return (
@@ -198,12 +219,11 @@ export default function App() {
       <main className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
         <header className="animate-fade-up rounded-[2rem] border border-line/70 bg-panel/75 p-6 shadow-soft backdrop-blur-sm lg:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="rounded-full border border-line/70 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted">
-              University exam office tool
+            <div className="rounded-full border border-line/70 bg-white/80 px-4 py-2 text-sm font-semibold tracking-[0.08em] text-ink">
+              Management Information System, BRUR
             </div>
-            <div className="text-right text-xs leading-5 text-muted">
-              <div>Batch digit: {batchDigit}</div>
-              <div>ID pattern: 12[B]220NN</div>
+            <div className="rounded-full border border-line/70 bg-white/70 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">
+              Print-ready layout
             </div>
           </div>
 
@@ -232,7 +252,8 @@ export default function App() {
               <MetricCard
                 label="Capacity"
                 value={capacity}
-                detail={`${config.columns} columns × ${config.rows} rows × 2 seats`}
+                detail={`${config.columns} columns × ${config.rows} rows`}
+                compact
               />
             </div>
           </div>
@@ -304,7 +325,7 @@ export default function App() {
               <MetricCard
                 label="Main seats"
                 value={capacity}
-                detail="Column order runs A through Z"
+                detail="Column pairs form the tables"
               />
               <MetricCard
                 label="Overflow"
@@ -318,8 +339,8 @@ export default function App() {
             </div>
 
             <div key={previewKey} className="mt-6 space-y-6 animate-fade-up">
-              <SeatingGrid seatPlan={seatPlan} />
-              <OverflowTable overflow={seatPlan?.overflow ?? []} />
+              <SeatingGrid seatPlan={seatPlan} onSeatSwap={handleSeatSwap} />
+              <OverflowTable extraRows={seatPlan?.extraRows ?? []} onSeatSwap={handleSeatSwap} />
             </div>
           </section>
         </div>
