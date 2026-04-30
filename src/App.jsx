@@ -3,6 +3,7 @@ import ConfigForm from "./components/ConfigForm";
 import StudentIdList from "./components/StudentIdList";
 import SeatingGrid from "./components/SeatingGrid";
 import OverflowTable from "./components/OverflowTable";
+import Preloader from "./components/Preloader";
 import PdfExport from "./components/PdfExport";
 import { assignSeats, swapSeatAssignments } from "./utils/seatAssigner";
 import {
@@ -230,6 +231,7 @@ export default function App() {
 
   return (
     <div className="w-full">
+      <Preloader />
       <main className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
         <header className="animate-fade-up rounded-[2rem] border border-line/70 bg-panel/75 p-6 shadow-soft backdrop-blur-sm lg:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
