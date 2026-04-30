@@ -1,0 +1,71 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "IBM Plex Sans";
+  --font-serif: "IBM Plex Serif";
+  --color-ink: 18 24 38;
+  --color-paper: 246 244 239;
+  --color-panel: 255 255 255;
+  --color-line: 214 219 226;
+  --color-accent: 15 118 110;
+  --color-accent-soft: 219 247 244;
+  --color-danger: 185 28 28;
+  --color-muted: 98 110 128;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  min-height: 100vh;
+  color: rgb(var(--color-ink));
+  background:
+    radial-gradient(
+      circle at top left,
+      rgb(212 239 234 / 0.6),
+      transparent 36%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgb(223 229 239 / 0.7),
+      transparent 30%
+    ),
+    linear-gradient(180deg, rgb(251 250 248), rgb(244 242 236));
+  background-attachment: fixed;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  color: white;
+  background: rgb(var(--color-accent));
+}
+
+@layer components {
+  .card {
+    @apply rounded-[2rem] border border-line/70 bg-panel/90 shadow-soft backdrop-blur-sm;
+  }
+
+  .field-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.28em] text-muted;
+  }
+
+  .input {
+    @apply mt-2 w-full rounded-2xl border border-line/80 bg-paper/80 px-4 py-3 text-sm text-ink shadow-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10;
+  }
+
+  .button-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold text-paper transition hover:-translate-y-0.5 hover:bg-accent focus:outline-none focus:ring-4 focus:ring-accent/20 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .button-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-line bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/60 hover:text-accent focus:outline-none focus:ring-4 focus:ring-accent/10 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
