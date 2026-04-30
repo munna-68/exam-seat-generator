@@ -23,7 +23,7 @@ const defaultConfig = {
   roomNumber: "505",
   batch: "13th",
   studentCount: 65,
-  columns: 6,
+  columns: 8,
   rows: 8,
 };
 
