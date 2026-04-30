@@ -79,7 +79,7 @@ function drawPairTable(
   const headerFill = [30, 41, 59];
   const oddFill = [255, 255, 255];
   const evenFill = [248, 250, 252];
-  const bodyColor = [17, 24, 39];
+  const bodyColor = [15, 23, 42];
   const emptyColor = [156, 163, 175];
 
   doc.setDrawColor(...borderColor);
@@ -119,8 +119,8 @@ function drawPairTable(
       doc.setFillColor(...fillColor);
       doc.rect(cellX, rowY, columnWidth, rowHeight, "FD");
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(bodyFontSize);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       doc.setTextColor(
         seat?.value ? bodyColor[0] : emptyColor[0],
         seat?.value ? bodyColor[1] : emptyColor[1],
@@ -193,11 +193,7 @@ export default function PdfExport({ config, seatPlan, isDisabled }) {
         extraLabelHeight -
         extraLabelGap -
         extraHeaderHeight;
-      const preferredRowHeight = 20;
-      const rowHeight = Math.min(
-        preferredRowHeight,
-        availableHeight / rowCount,
-      );
+      const rowHeight = Math.max(1, availableHeight / rowCount);
       const bodyFontSize = rowHeight < 18 ? 7 : 8;
       const mainTableHeight = mainHeaderHeight + seatPlan.rows * rowHeight;
 
