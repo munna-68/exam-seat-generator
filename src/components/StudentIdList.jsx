@@ -42,6 +42,12 @@ export default function StudentIdList({
     }
   }, [isBulkOpen]);
 
+  useEffect(() => {
+    if (isBulkOpen && studentIds.length >= MAX_STUDENTS) {
+      closeBulkPanel();
+    }
+  }, [isBulkOpen, studentIds.length]);
+
   const handleBulkToggle = () => {
     if (isBulkOpen) {
       closeBulkPanel();
@@ -59,7 +65,10 @@ export default function StudentIdList({
   };
 
   const handleBulkAdd = () => {
-    const tokens = bulkInput.split(/[\s,]+/).map((token) => token.trim()).filter(Boolean);
+    const tokens = bulkInput
+      .split(/[\s,]+/)
+      .map((token) => token.trim())
+      .filter(Boolean);
     const seen = new Set(studentIds.map((studentId) => studentId.trim()));
     const validIds = [];
     let duplicateCount = 0;
@@ -87,7 +96,9 @@ export default function StudentIdList({
 
     onAddMultipleIds(validIds);
     setBulkStatus("success");
-    setBulkMessage(`${validIds.length} IDs added. ${duplicateCount} duplicates skipped.`);
+    setBulkMessage(
+      `${validIds.length} IDs added. ${duplicateCount} duplicates skipped.`,
+    );
     clearCloseTimer();
     closeTimerRef.current = setTimeout(() => {
       closeBulkPanel();
@@ -196,6 +207,7 @@ export default function StudentIdList({
             type="button"
             className="button-secondary"
             onClick={handleBulkToggle}
+            disabled={studentIds.length >= MAX_STUDENTS}
           >
             + Add Multiple IDs
           </button>
