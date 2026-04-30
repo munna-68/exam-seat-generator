@@ -81,12 +81,12 @@ function formatSummaryDate(value) {
   }).format(date);
 }
 
-function MetricCard({ label, value, detail, compact = false }) {
+function MetricCard({ label, value, detail, compact = false, className = "" }) {
   return (
     <div
       className={`rounded-3xl border border-line/70 bg-white/85 shadow-sm ${
         compact ? "px-3 py-3" : "px-4 py-4"
-      }`}
+      } ${className}`}
     >
       <p
         className={`font-semibold uppercase text-muted ${
@@ -231,7 +231,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_auto] lg:items-end">
             <div>
               <h1 className="font-serif text-4xl leading-tight tracking-tight text-ink sm:text-5xl">
                 Exam Seat Plan Generator
@@ -243,7 +243,7 @@ export default function App() {
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <div className="w-fit">
               <MetricCard
                 label="Exam date"
                 value={formatSummaryDate(config.date)}
@@ -252,12 +252,6 @@ export default function App() {
                     ? `Room ${config.roomNumber}`
                     : "Room not set"
                 }
-              />
-              <MetricCard
-                label="Capacity"
-                value={capacity}
-                detail={`${config.columns} columns × ${config.rows} rows`}
-                compact
               />
             </div>
           </div>
