@@ -219,7 +219,7 @@ export default function App() {
     : "Randomize the list to generate a new seating arrangement.";
 
   return (
-    <div className="min-h-screen">
+    <div className="w-full">
       <main className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
         <header className="animate-fade-up rounded-[2rem] border border-line/70 bg-panel/75 p-6 shadow-soft backdrop-blur-sm lg:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -263,7 +263,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start">
           <div className="space-y-6">
             <ConfigForm config={config} onFieldChange={handleFieldChange} />
 
@@ -278,7 +278,7 @@ export default function App() {
             />
           </div>
 
-          <section className="card animate-fade-up p-6 lg:sticky lg:top-6 lg:self-start lg:p-7">
+          <section className="card animate-fade-up p-6 lg:p-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="field-label">Preview and export</p>

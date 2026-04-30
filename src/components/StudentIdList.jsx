@@ -31,7 +31,7 @@ export default function StudentIdList({
         </div>
       </div>
 
-      <div className="mt-5 max-h-[32rem] overflow-y-auto pr-1">
+      <div className="mt-5 pr-1">
         <div className="grid gap-3 sm:grid-cols-2">
           {studentIds.map((studentId, index) => {
             const validationMessage = validationMap[index];
